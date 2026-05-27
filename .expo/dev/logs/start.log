@@ -1,0 +1,94 @@
+{"_e":"root:init","_t":1779914504174,"format":"v0-jsonl","version":"56.1.12"}
+{"_e":"env:mode","_t":1779914504175,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1779914504179,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1779914504358,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1779914504651,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1779914508570,"atlas":false,"workers":6,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1779914533072,"id":"1","platform":"web","environment":null,"entry":"node_modules\\expo\\AppEntry.js"}
+{"_e":"metro:bundling:progress","_t":1779914533072,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779914533076,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779914533628,"id":"1","progress":0.010000000000000002,"total":1,"current":1}
+{"_e":"metro:bundling:progress","_t":1779914533733,"id":"1","progress":0.16000000000000003,"total":9,"current":4}
+{"_e":"metro:bundling:progress","_t":1779914533834,"id":"1","progress":0.34602076124567477,"total":17,"current":10}
+{"_e":"metro:bundling:progress","_t":1779914533945,"id":"1","progress":0.34602076124567477,"total":23,"current":13}
+{"_e":"metro:bundling:progress","_t":1779914534098,"id":"1","progress":0.48393194706994325,"total":23,"current":16}
+{"_e":"metro:bundling:progress","_t":1779914534204,"id":"1","progress":0.48393194706994325,"total":35,"current":22}
+{"_e":"metro:bundling:progress","_t":1779914534304,"id":"1","progress":0.5048476454293629,"total":38,"current":27}
+{"_e":"metro:bundling:progress","_t":1779914534404,"id":"1","progress":0.6944444444444445,"total":42,"current":35}
+{"_e":"metro:bundling:progress","_t":1779914534511,"id":"1","progress":0.7901234567901234,"total":45,"current":40}
+{"_e":"metro:bundling:progress","_t":1779914534615,"id":"1","progress":0.8879437869822485,"total":52,"current":49}
+{"_e":"metro:bundling:progress","_t":1779914534716,"id":"1","progress":0.9658145065398335,"total":58,"current":57}
+{"_e":"metro:bundling:failed","_t":1779914534757,"id":"1","message":"Unable to resolve \"react-native-web/dist/exports/AppRegistry\" from \"node_modules\\expo\\src\\launch\\AppRegistry.ts\"\n> 1 | export { AppRegistry as default } from 'react-native';\n  2 |","importStack":"\u001b[1mImport stack:\u001b[22m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90mnode_modules\\expo\\src\\launch\\AppRegistry.ts\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"react-native-web/dist/exports/AppRegistry\"\u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90mnode_modules\\expo\\src\\launch\\registerRootComponent.web.tsx\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"./AppRegistry\"\u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90mnode_modules\\expo\\AppEntry.js\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"expo/src/launch/registerRootComponent\"\u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"./node_modules/\u001b[1mexpo\u001b[22m/AppEntry\"\u001b[39m\u001b[90m\u001b[39m\n","filename":null,"targetModuleName":"react-native-web/dist/exports/AppRegistry","originModulePath":"node_modules\\expo\\src\\launch\\AppRegistry.ts"}
+{"_e":"metro:bundling:started","_t":1779914551336,"id":"2","platform":"web","environment":null,"entry":"node_modules\\expo\\AppEntry.js"}
+{"_e":"metro:bundling:progress","_t":1779914551336,"id":"2","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779914551337,"id":"2","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:failed","_t":1779914551377,"id":"2","message":"Unable to resolve \"react-native-web/dist/exports/I18nManager\" from \"App.tsx\"\n> 1 | import { StatusBar } from \"expo-status-bar\";\n  2 | import React, { useEffect, useMemo, useState } from \"react\";\n  3 | import {\n  4 |   I18nManager,","importStack":"\u001b[1mImport stack:\u001b[22m\n\n\u001b[90m \u001b[39mApp.tsx\n\u001b[90m |\u001b[39m \u001b[36mimport\u001b[39m \u001b[32m\"react-native-web/dist/exports/I18nManager\"\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90mnode_modules\\expo\\AppEntry.js\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"../../App\"\u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"./node_modules/\u001b[1mexpo\u001b[22m/AppEntry\"\u001b[39m\u001b[90m\u001b[39m\n","filename":null,"targetModuleName":"react-native-web/dist/exports/I18nManager","originModulePath":"App.tsx"}
+{"_e":"metro:bundling:started","_t":1779914592021,"id":"3","platform":"web","environment":null,"entry":"node_modules\\expo\\AppEntry.js"}
+{"_e":"metro:bundling:progress","_t":1779914592021,"id":"3","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779914592022,"id":"3","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:failed","_t":1779914592064,"id":"3","message":"Unable to resolve \"react-native-web/dist/exports/I18nManager\" from \"App.tsx\"\n> 1 | import { StatusBar } from \"expo-status-bar\";\n  2 | import React, { useEffect, useMemo, useState } from \"react\";\n  3 | import {\n  4 |   I18nManager,","importStack":"\u001b[1mImport stack:\u001b[22m\n\n\u001b[90m \u001b[39mApp.tsx\n\u001b[90m |\u001b[39m \u001b[36mimport\u001b[39m \u001b[32m\"react-native-web/dist/exports/I18nManager\"\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90mnode_modules\\expo\\AppEntry.js\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"../../App\"\u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"./node_modules/\u001b[1mexpo\u001b[22m/AppEntry\"\u001b[39m\u001b[90m\u001b[39m\n","filename":null,"targetModuleName":"react-native-web/dist/exports/I18nManager","originModulePath":"App.tsx"}
+{"_e":"metro:bundling:started","_t":1779914596225,"id":"5","platform":"web","environment":null,"entry":"node_modules\\expo\\AppEntry.js"}
+{"_e":"metro:bundling:progress","_t":1779914596225,"id":"5","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779914596227,"id":"5","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:failed","_t":1779914596258,"id":"5","message":"Unable to resolve \"react-native-web/dist/exports/I18nManager\" from \"App.tsx\"\n> 1 | import { StatusBar } from \"expo-status-bar\";\n  2 | import React, { useEffect, useMemo, useState } from \"react\";\n  3 | import {\n  4 |   I18nManager,","importStack":"\u001b[1mImport stack:\u001b[22m\n\n\u001b[90m \u001b[39mApp.tsx\n\u001b[90m |\u001b[39m \u001b[36mimport\u001b[39m \u001b[32m\"react-native-web/dist/exports/I18nManager\"\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90mnode_modules\\expo\\AppEntry.js\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"../../App\"\u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m \u001b[39m\u001b[90m\u001b[39m\n\u001b[90m\u001b[90m |\u001b[39m\u001b[90m \u001b[36mimport\u001b[39m\u001b[90m \u001b[32m\"./node_modules/\u001b[1mexpo\u001b[22m/AppEntry\"\u001b[39m\u001b[90m\u001b[39m\n","filename":null,"targetModuleName":"react-native-web/dist/exports/I18nManager","originModulePath":"App.tsx"}
+{"_e":"root:init","_t":1779914666199,"format":"v0-jsonl","version":"56.1.12"}
+{"_e":"env:mode","_t":1779914666200,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1779914666203,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1779914666391,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1779914666680,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1779914670701,"atlas":false,"workers":6,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1779914670852,"id":"1","platform":"web","environment":null,"entry":"node_modules\\expo\\AppEntry.js"}
+{"_e":"metro:bundling:progress","_t":1779914670853,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779914670860,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779914670965,"id":"1","progress":0.933352484918127,"total":59,"current":57}
+{"_e":"metro:bundling:progress","_t":1779914671524,"id":"1","progress":0.966388968687159,"total":59,"current":58}
+{"_e":"metro:bundling:progress","_t":1779914671629,"id":"1","progress":0.966388968687159,"total":63,"current":59}
+{"_e":"metro:bundling:progress","_t":1779914671740,"id":"1","progress":0.966388968687159,"total":76,"current":64}
+{"_e":"metro:bundling:progress","_t":1779914671842,"id":"1","progress":0.966388968687159,"total":87,"current":66}
+{"_e":"metro:bundling:progress","_t":1779914671944,"id":"1","progress":0.966388968687159,"total":104,"current":75}
+{"_e":"metro:bundling:progress","_t":1779914672053,"id":"1","progress":0.966388968687159,"total":115,"current":85}
+{"_e":"metro:bundling:progress","_t":1779914672158,"id":"1","progress":0.966388968687159,"total":124,"current":95}
+{"_e":"metro:bundling:progress","_t":1779914672257,"id":"1","progress":0.966388968687159,"total":127,"current":104}
+{"_e":"metro:bundling:progress","_t":1779914672357,"id":"1","progress":0.966388968687159,"total":139,"current":115}
+{"_e":"metro:bundling:progress","_t":1779914672457,"id":"1","progress":0.966388968687159,"total":148,"current":133}
+{"_e":"metro:bundling:progress","_t":1779914672557,"id":"1","progress":0.966388968687159,"total":164,"current":153}
+{"_e":"metro:bundling:progress","_t":1779914672668,"id":"1","progress":0.9890411786016182,"total":182,"current":181}
+{"_e":"metro:bundling:progress","_t":1779914673887,"id":"1","progress":0.999,"total":182,"current":182}
+{"_e":"metro:bundling:progress","_t":1779914673997,"id":"1","progress":0.999,"total":186,"current":186}
+{"_e":"metro:bundling:done","_t":1779914674074,"id":"1","total":186,"ms":3221.7083}
+{"_e":"metro:client_log","_t":1779914674167,"level":"info","data":["%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools","font-weight:bold"]}
+{"_e":"metro:client_log","_t":1779914674167,"level":"log","data":["Running application \"main\" with appParams:\n","{\"hydrate\": undefined, \"rootTag\": \"#root\"}","\nDevelopment-level warnings: ON.\nPerformance optimizations: OFF."]}
+{"_e":"metro:client_log","_t":1779914760604,"level":"error","data":["Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."]}
+{"_e":"metro:client_log","_t":1779914760739,"level":"error","data":["Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."]}
+{"_e":"metro:client_log","_t":1779914760885,"level":"error","data":["Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."]}
+{"_e":"metro:client_log","_t":1779914761012,"level":"error","data":["Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."]}
+{"_e":"metro:client_log","_t":1779914774529,"level":"error","data":["Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."]}
+{"_e":"metro:client_log","_t":1779914774654,"level":"error","data":["Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."]}
+{"_e":"metro:client_log","_t":1779914774776,"level":"error","data":["Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."]}
+{"_e":"root:init","_t":1779915006051,"format":"v0-jsonl","version":"56.1.12"}
+{"_e":"env:mode","_t":1779915006052,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1779915006055,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1779915006266,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1779915006576,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1779915010626,"atlas":false,"workers":6,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1779915011044,"id":"1","platform":"web","environment":null,"entry":"node_modules\\expo\\AppEntry.js"}
+{"_e":"metro:bundling:progress","_t":1779915011044,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779915011047,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1779915011147,"id":"1","progress":0.5036420395421437,"total":93,"current":66}
+{"_e":"metro:bundling:done","_t":1779915011266,"id":"1","total":93,"ms":222.4585}
+{"_e":"metro:client_log","_t":1779915011367,"level":"info","data":["%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools","font-weight:bold"]}
+{"_e":"metro:client_log","_t":1779915011367,"level":"log","data":["Running application \"main\" with appParams:\n","{\"hydrate\": undefined, \"rootTag\": \"#root\"}","\nDevelopment-level warnings: ON.\nPerformance optimizations: OFF."]}
+{"_e":"metro:client_log","_t":1779915358830,"level":"error","data":["Project is incompatible with this version of Expo Go\n\nThe project you requested requires a newer version of Expo Go.\n\nHow to fix this error:\n\nDownload the latest version of Expo Go from the App Store."]}
+{"_e":"root:init","_t":1779915449529,"format":"v0-jsonl","version":"56.1.12"}
+{"_e":"env:mode","_t":1779915449530,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1779915449532,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1779915449687,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1779915449963,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1779915453743,"atlas":false,"workers":6,"host":"::","port":8081}
+{"_e":"metro:client_log","_t":1779915471918,"level":"error","data":["Project is incompatible with this version of Expo Go\n\nThe project you requested requires a newer version of Expo Go.\n\nHow to fix this error:\n\nDownload the latest version of Expo Go from the App Store."]}
+{"_e":"root:init","_t":1779916214121,"format":"v0-jsonl","version":"56.1.12"}
+{"_e":"env:mode","_t":1779916214122,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1779916214125,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1779916214369,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1779916214706,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1779916218636,"atlas":false,"workers":6,"host":"::","port":8081}
