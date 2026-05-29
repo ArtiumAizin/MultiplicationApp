@@ -9,6 +9,10 @@
       "android",
       "web"
     ],
-    "userInterfaceStyle": "light"
+    "userInterfaceStyle": "light",
+    "web": {
+      "bundler": "metro",
+      "baseUrl": "/MultiplicationApp"
+    }
   }
 }
