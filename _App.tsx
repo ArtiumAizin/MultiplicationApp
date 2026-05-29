@@ -2,7 +2,6 @@ import { Asset } from "expo-asset";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
   I18nManager,
   Image,
   Platform,
@@ -98,7 +97,7 @@ function buildMemory(level: MemoryLevel): MemoryCard[] {
   const ranges: Record<MemoryLevel, { pairsCount: number; tables: number[] }> = {
     1: { pairsCount: 4, tables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
     2: { pairsCount: 6, tables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
-    3: { pairsCount: 12, tables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+    3: { pairsCount: 8, tables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
   };
 
   const { pairsCount, tables } = ranges[level];
@@ -312,65 +311,6 @@ function ToastOverlay({ text, tone }: { text: string; tone: FeedbackTone }) {
   );
 }
 
-function MemoryBoard({
-  cards,
-  level,
-  matchedPairs,
-  onCardPress,
-  onLevelSelect
-}: {
-  cards: (MemoryCard & { isOpen: boolean })[];
-  level: MemoryLevel;
-  matchedPairs: number;
-  onCardPress: (id: string) => void;
-  onLevelSelect: () => void;
-}) {
-  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-  const cols = level === 1 ? 2 : level === 2 ? 3 : 4;
-  const ROWS = 4;
-  const GAP = 8;
-  const PADDING = 16;
-  const RESERVED_HEIGHT = 180;
-  const availableWidth = screenWidth - PADDING * 2 - GAP * (cols - 1);
-  const availableHeight = screenHeight - RESERVED_HEIGHT - GAP * (ROWS - 1);
-  const cardByWidth = Math.floor(availableWidth / cols);
-  const cardByHeight = Math.floor(availableHeight / ROWS);
-  // הוסף הגבלה מקסימלית כדי שקלפים ברמה קל לא יהיו ענקיים
-  const cardSize = Math.min(cardByWidth, cardByHeight, 160);
-  const totalPairs = level === 1 ? 4 : level === 2 ? 6 : 8;
-  const done = matchedPairs >= totalPairs;
-
-  return (
-    <View style={styles.gameArea}>
-      <View style={[styles.memoryGrid, { gap: GAP }]}>
-        {cards.map((card) => (
-          <Pressable
-            key={card.id}
-            style={[
-              styles.memoryCard,
-              { width: cardSize, height: cardSize },
-              card.isOpen && styles.memoryCardOpen
-            ]}
-            onPress={() => onCardPress(card.id)}
-          >
-            <Text style={[styles.memoryText, { fontSize: cardSize * 0.2 }]}>
-              {card.isOpen ? `${card.result}` : card.text}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      {done && (
-        <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>כל הכבוד! 🎉</Text>
-          <Pressable style={styles.primaryBtn} onPress={onLevelSelect}>
-            <Text style={styles.primaryBtnText}>רמה אחרת</Text>
-          </Pressable>
-        </View>
-      )}
-    </View>
-  );
-}
-
 export default function App() {
   const [screen, setScreen] = useState<Screen>("menu");
   const [gameMode, setGameMode] = useState<GameMode | null>(null);
@@ -420,25 +360,17 @@ export default function App() {
 
   useEffect(() => {
     if (opened.length !== 2) return;
-    const [idA, idB] = opened;
-    const a = memoryCards.find((c) => c.id === idA);
-    const b = memoryCards.find((c) => c.id === idB);
+    const [a, b] = opened.map((id) => memoryCards.find((c) => c.id === id));
     if (!a || !b) return;
-    const matched = a.result === b.result;
-    if (matched) {
-      setMemoryCards((prev) =>
-        prev.map((c) => (c.id === idA || c.id === idB ? { ...c, matched: true } : c))
-      );
+    if (a.result === b.result) {
+      setMemoryCards((prev) => prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, matched: true } : c)));
       setMatchedPairs((p) => p + 1);
+      showOverlay("כל הכבוד!", "success");
+    } else {
+      showOverlay("נסו שוב", "error");
     }
-    // הצג overlay ישירות בלי לקרוא לפונקציה שמחוץ ל-effect
-    if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
-    setOverlayFeedback({ text: matched ? "כל הכבוד! 🎉" : "נסו שוב", tone: matched ? "success" : "error" });
-    overlayTimerRef.current = setTimeout(() => {
-      setOverlayFeedback(null);
-      setOpened([]);
-    }, 900);
-  }, [opened]); // eslint-disable-line react-hooks/exhaustive-deps
+    setTimeout(() => setOpened([]), 600);
+  }, [opened, memoryCards]);
 
   useEffect(
     () => () => {
@@ -576,9 +508,9 @@ export default function App() {
               <Text style={styles.levelSelectHint}>בחרו רמה</Text>
               {(
                 [
-                  { lvl: 1 as MemoryLevel, title: "קל", desc: "8 קלפים, 2 בשורה" },
-                  { lvl: 2 as MemoryLevel, title: "בינוני", desc: "12 קלפים, 3 בשורה" },
-                  { lvl: 3 as MemoryLevel, title: "קשה", desc: "16 קלפים, 4 בשורה" }
+                  { lvl: 1 as MemoryLevel, title: "קל", desc: "9 זוגות קלפים" },
+                  { lvl: 2 as MemoryLevel, title: "בינוני", desc: "15 זוגות קלפים" },
+                  { lvl: 3 as MemoryLevel, title: "קשה", desc: "20 זוגות קלפים" }
                 ] as const
               ).map((item) => (
                 <Pressable key={item.lvl} style={styles.levelCard} onPress={() => startMemory(item.lvl)}>
@@ -714,16 +646,38 @@ export default function App() {
           )}
 
           {screen === "game" && gameMode === "memory" && (
-            <MemoryBoard
-              cards={visibleMemoryCards}
-              level={memoryLevel}
-              matchedPairs={matchedPairs}
-              onCardPress={(id) => {
-                if (opened.length === 2 || visibleMemoryCards.find(c => c.id === id)?.matched || opened.includes(id)) return;
-                setOpened((prev) => [...prev, id]);
-              }}
-              onLevelSelect={goLevelSelect}
-            />
+            <View style={styles.gameArea}>
+              <Text style={styles.questionCounter}>ניקוד: {matchedPairs} זוגות</Text>
+              <View style={styles.memoryGrid}>
+                {visibleMemoryCards.map((card) => {
+                  const cardWidth = memoryLevel === 1 ? "50%" : memoryLevel === 2 ? "33.333%" : "25%";
+                  return (
+                    <Pressable
+                      key={card.id}
+                      style={[
+                        styles.memoryCard,
+                        { width: cardWidth },
+                        card.isOpen && styles.memoryCardOpen
+                      ]}
+                      onPress={() => {
+                        if (opened.length === 2 || card.matched || opened.includes(card.id)) return;
+                        setOpened((prev) => [...prev, card.id]);
+                      }}
+                    >
+                      <Text style={styles.memoryText}>{card.isOpen ? card.result : card.text}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {matchedPairs >= (memoryLevel === 1 ? 4 : memoryLevel === 2 ? 6 : 8) && (
+                <View style={styles.resultCard}>
+                  <Text style={styles.resultTitle}>כל הכבוד!</Text>
+                  <Pressable style={styles.primaryBtn} onPress={goLevelSelect}>
+                    <Text style={styles.primaryBtnText}>רמה אחרת</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
           )}
         </View>
 
@@ -911,8 +865,11 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   primaryBtnText: { color: palette.text, fontWeight: "700", fontSize: 16 },
-  memoryGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignContent: "center" },
+  memoryGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8 },
   memoryCard: {
+    width: "30%",
+    minWidth: 70,
+    aspectRatio: 1,
     borderRadius: 12,
     backgroundColor: "#ffffffcc",
     alignItems: "center",
