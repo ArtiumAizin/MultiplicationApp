@@ -1,11 +1,12 @@
+import { Asset } from "expo-asset";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   I18nManager,
+  Image,
   Platform,
   Pressable,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   View
@@ -16,9 +17,12 @@ if (Platform.OS !== "web") {
   I18nManager.forceRTL(true);
 }
 
-type Mode = "menu" | "sequential" | "mixed" | "memory";
+type GameMode = "sequential" | "mixed" | "memory";
+type Screen = "menu" | "level-select" | "game";
 type MixedLevel = 1 | 2 | 3;
 type MemoryLevel = 1 | 2 | 3;
+type QuestionStatus = "pending" | "correct" | "skipped";
+type FeedbackTone = "success" | "error" | "info";
 
 type Question = {
   left: number;
@@ -41,8 +45,14 @@ const palette = {
   text: "#3B3552",
   accent: "#8E7CC3",
   success: "#6FB87C",
-  warning: "#E9A96B"
+  error: "#E57373",
+  pending: "#C8C4D4",
+  warning: "#E9A96B",
+  shadow: "rgba(59, 53, 82, 0.12)"
 };
+
+const PHONE_WIDTH = 390;
+const APP_LOGO = require("./assets/app-logo.png");
 
 const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
 
@@ -95,100 +105,218 @@ function buildMemory(level: MemoryLevel): MemoryCard[] {
   return shuffle(cards);
 }
 
+function useTimedFeedback(durationMs = 1100) {
+  const [feedback, setFeedback] = useState<{ text: string; tone: FeedbackTone } | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showFeedback = (text: string, tone: FeedbackTone = "info") => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setFeedback({ text, tone });
+    timerRef.current = setTimeout(() => setFeedback(null), durationMs);
+  };
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
+
+  return { feedback, showFeedback, clearFeedback: () => setFeedback(null) };
+}
+
+function PhoneShell({ children }: { children: React.ReactNode }) {
+  if (Platform.OS !== "web") {
+    return <View style={styles.shellNative}>{children}</View>;
+  }
+  return (
+    <View style={styles.shellWebOuter}>
+      <View style={styles.shellWebInner}>{children}</View>
+    </View>
+  );
+}
+
+function AppHeader({ onBack, showTagline }: { onBack?: () => void; showTagline?: boolean }) {
+  return (
+    <View style={[styles.headerBase, showTagline ? styles.headerHome : styles.headerCompact]}>
+      {!showTagline &&
+        (onBack ? (
+          <Pressable onPress={onBack} style={styles.headerBack} hitSlop={12}>
+            <Text style={styles.headerBackText}>→</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.headerSide} />
+        ))}
+      <Image
+        key="kefli-logo"
+        source={APP_LOGO}
+        style={showTagline ? styles.headerLogoLarge : styles.headerLogoSmall}
+        resizeMode="contain"
+        fadeDuration={0}
+      />
+      {showTagline ? (
+        <Text style={styles.headerTagline}>לומדים כפל בכיף</Text>
+      ) : (
+        <View style={styles.headerSide} />
+      )}
+    </View>
+  );
+}
+
+function QuestionProgress({
+  statuses,
+  currentIndex
+}: {
+  statuses: QuestionStatus[];
+  currentIndex: number;
+}) {
+  return (
+    <View style={styles.progressRow}>
+      {statuses.map((status, index) => (
+        <View
+          key={index}
+          style={[
+            styles.progressDot,
+            status === "pending" && styles.progressPending,
+            status === "correct" && styles.progressCorrect,
+            status === "skipped" && styles.progressSkipped,
+            index === currentIndex && status === "pending" && styles.progressCurrent
+          ]}
+        >
+          <Text style={styles.progressDotText}>{index + 1}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function StarRating({ correctCount }: { correctCount: number }) {
+  const stars = correctCount === 10 ? 3 : correctCount >= 5 ? 2 : correctCount >= 1 ? 1 : 0;
+  return (
+    <View style={styles.starRow}>
+      {[0, 1, 2].map((index) => (
+        <Text key={index} style={[styles.starIcon, index < stars ? styles.starGold : styles.starGray]}>
+          ★
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 function Keypad({
   value,
   onChange,
-  onSubmit
+  onSubmit,
+  feedback
 }: {
   value: string;
   onChange: (next: string) => void;
   onSubmit: () => void;
+  feedback: { text: string; tone: FeedbackTone } | null;
 }) {
   const rows = [
     ["7", "8", "9"],
     ["4", "5", "6"],
     ["1", "2", "3"]
   ];
+
+  const inputToneStyle =
+    feedback?.tone === "success"
+      ? styles.inputSuccess
+      : feedback?.tone === "error"
+        ? styles.inputError
+        : null;
+
   return (
     <View style={styles.keypadWrap}>
-      <Text style={styles.inputValue}>{value || "הקלידו תשובה"}</Text>
-      <View style={styles.keypadRows}>
-        {rows.map((row) => (
-          <View key={row.join("-")} style={styles.keypadRow}>
-            {row.map((k) => (
-              <Pressable key={k} style={styles.key} onPress={() => onChange(value + k)}>
-                <Text style={styles.keyText}>{k}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ))}
+      <Text style={[styles.inputValue, inputToneStyle]}>
+        {feedback ? feedback.text : value || "הקלידו תשובה"}
+      </Text>
+      <View style={styles.keypadLtr}>
+        <View style={styles.keypadRows}>
+          {rows.map((row) => (
+            <View key={row.join("-")} style={styles.keypadRow}>
+              {row.map((k) => (
+                <Pressable key={k} style={styles.key} onPress={() => onChange(value + k)}>
+                  <Text style={styles.keyText}>{k}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ))}
+        </View>
+        <View style={styles.keypadRow}>
+          <Pressable style={[styles.keyActionBtn, styles.keyConfirmBtn]} onPress={onSubmit}>
+            <Text style={styles.keyActionText}>אישור</Text>
+          </Pressable>
+          <Pressable style={styles.key} onPress={() => onChange(value + "0")}>
+            <Text style={styles.keyText}>0</Text>
+          </Pressable>
+          <Pressable style={[styles.keyActionBtn, styles.keyDeleteBtn]} onPress={() => onChange(value.slice(0, -1))}>
+            <Text style={styles.keyActionText}>מחיקה</Text>
+          </Pressable>
+        </View>
       </View>
-      <View style={styles.keypadRow}>
-        <Pressable style={styles.keyActionBtn} onPress={onSubmit}>
-          <Text style={styles.secondaryBtnText}>אישור</Text>
-        </Pressable>
-        <Pressable style={styles.key} onPress={() => onChange(value + "0")}>
-          <Text style={styles.keyText}>0</Text>
-        </Pressable>
-        <Pressable style={styles.keyActionBtn} onPress={() => onChange(value.slice(0, -1))}>
-          <Text style={styles.secondaryBtnText}>מחיקה</Text>
-        </Pressable>
+    </View>
+  );
+}
+
+function ToastOverlay({ text, tone }: { text: string; tone: FeedbackTone }) {
+  const toneStyle =
+    tone === "success" ? styles.toastSuccess : tone === "error" ? styles.toastError : styles.toastInfo;
+  return (
+    <View style={styles.toastOverlay} pointerEvents="none">
+      <View style={[styles.toastBox, toneStyle]}>
+        <Text style={styles.toastText}>🦊 {text}</Text>
       </View>
     </View>
   );
 }
 
 export default function App() {
-  const [mode, setMode] = useState<Mode>("menu");
-  const [mascot, setMascot] = useState("");
+  const [screen, setScreen] = useState<Screen>("menu");
+  const [gameMode, setGameMode] = useState<GameMode | null>(null);
+  const { feedback, showFeedback, clearFeedback } = useTimedFeedback();
+  const [overlayFeedback, setOverlayFeedback] = useState<{ text: string; tone: FeedbackTone } | null>(
+    null
+  );
+  const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showOverlay = (text: string, tone: FeedbackTone = "info") => {
+    if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
+    setOverlayFeedback({ text, tone });
+    overlayTimerRef.current = setTimeout(() => setOverlayFeedback(null), 1100);
+  };
 
   const [seqLevel, setSeqLevel] = useState(1);
   const [seqQ, setSeqQ] = useState<Question[]>(buildSequential(1));
   const [seqIndex, setSeqIndex] = useState(0);
   const [seqInput, setSeqInput] = useState("");
-  const [seqCorrect, setSeqCorrect] = useState(0);
-  const [seqSkips, setSeqSkips] = useState(0);
+  const [seqLocked, setSeqLocked] = useState(false);
+  const [seqStatuses, setSeqStatuses] = useState<QuestionStatus[]>(Array(10).fill("pending"));
 
   const [mixedLevel, setMixedLevel] = useState<MixedLevel>(1);
   const [mixedQ, setMixedQ] = useState<Question[]>(buildMixed(1));
   const [mixedIndex, setMixedIndex] = useState(0);
   const [mixedInput, setMixedInput] = useState("");
+  const [mixedLocked, setMixedLocked] = useState(false);
   const [mixedScore, setMixedScore] = useState(0);
+  const [mixedStatuses, setMixedStatuses] = useState<QuestionStatus[]>(Array(10).fill("pending"));
 
   const [memoryLevel, setMemoryLevel] = useState<MemoryLevel>(1);
   const [memoryCards, setMemoryCards] = useState<MemoryCard[]>(buildMemory(1));
   const [opened, setOpened] = useState<string[]>([]);
   const [matchedPairs, setMatchedPairs] = useState(0);
 
-  const showMascot = (text: string) => {
-    setMascot(text);
-    setTimeout(() => setMascot(""), 1300);
-  };
-
-  useEffect(() => {
-    setSeqQ(buildSequential(seqLevel));
-    setSeqIndex(0);
-    setSeqCorrect(0);
-    setSeqSkips(0);
-    setSeqInput("");
-  }, [seqLevel]);
-
-  useEffect(() => {
-    setMixedQ(buildMixed(mixedLevel));
-    setMixedIndex(0);
-    setMixedInput("");
-    setMixedScore(0);
-  }, [mixedLevel]);
-
-  useEffect(() => {
-    setMemoryCards(buildMemory(memoryLevel));
-    setOpened([]);
-    setMatchedPairs(0);
-  }, [memoryLevel]);
-
   const seqDone = seqIndex >= seqQ.length;
   const mixedDone = mixedIndex >= mixedQ.length;
-  const seqScore = Math.max(0, Math.min(10, seqCorrect - seqSkips));
+  const seqScore = useMemo(
+    () =>
+      Math.max(
+        0,
+        Math.min(10, seqStatuses.filter((s) => s === "correct").length - seqStatuses.filter((s) => s === "skipped").length)
+      ),
+    [seqStatuses]
+  );
 
   const visibleMemoryCards = useMemo(
     () => memoryCards.map((c) => ({ ...c, isOpen: opened.includes(c.id) || c.matched })),
@@ -202,274 +330,526 @@ export default function App() {
     if (a.result === b.result) {
       setMemoryCards((prev) => prev.map((c) => (c.id === a.id || c.id === b.id ? { ...c, matched: true } : c)));
       setMatchedPairs((p) => p + 1);
-      showMascot("כל הכבוד! 🎉");
+      showOverlay("כל הכבוד!", "success");
     } else {
-      showMascot("ננסה שוב 💪");
+      showOverlay("נסו שוב", "error");
     }
     setTimeout(() => setOpened([]), 600);
   }, [opened, memoryCards]);
 
-  const resetAll = () => {
-    setMode("menu");
-    setSeqLevel(1);
-    setMixedLevel(1);
-    setMemoryLevel(1);
-    setMascot("");
+  useEffect(
+    () => () => {
+      if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
+    },
+    []
+  );
+
+  useEffect(() => {
+    Asset.fromModule(APP_LOGO)
+      .downloadAsync()
+      .catch(() => undefined);
+  }, []);
+
+  const openMode = (mode: GameMode) => {
+    setGameMode(mode);
+    setScreen("level-select");
+    clearFeedback();
+    setOverlayFeedback(null);
+  };
+
+  const startSequential = (level: number) => {
+    setSeqLevel(level);
+    setSeqQ(buildSequential(level));
+    setSeqIndex(0);
+    setSeqInput("");
+    setSeqLocked(false);
+    setSeqStatuses(Array(10).fill("pending"));
+    clearFeedback();
+    setScreen("game");
+  };
+
+  const startMixed = (level: MixedLevel) => {
+    setMixedLevel(level);
+    setMixedQ(buildMixed(level));
+    setMixedIndex(0);
+    setMixedInput("");
+    setMixedLocked(false);
+    setMixedScore(0);
+    setMixedStatuses(Array(10).fill("pending"));
+    clearFeedback();
+    setScreen("game");
+  };
+
+  const goNextSequentialLevel = () => {
+    if (seqLevel >= 9) return;
+    startSequential(seqLevel + 1);
+  };
+
+  const startMemory = (level: MemoryLevel) => {
+    setMemoryLevel(level);
+    setMemoryCards(buildMemory(level));
+    setOpened([]);
+    setMatchedPairs(0);
+    setScreen("game");
+  };
+
+  const goMenu = () => {
+    setScreen("menu");
+    setGameMode(null);
+    clearFeedback();
+    setOverlayFeedback(null);
+  };
+
+  const goLevelSelect = () => {
+    setScreen("level-select");
+    clearFeedback();
+    setOverlayFeedback(null);
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>כפלי - KEFLI</Text>
-        <Text style={styles.subtitle}>לומדים כפל בכיף</Text>
+    <PhoneShell>
+      <SafeAreaView style={styles.safe}>
+        <StatusBar style="dark" />
+        <AppHeader
+          showTagline={screen === "menu"}
+          onBack={screen === "menu" ? undefined : screen === "level-select" ? goMenu : goLevelSelect}
+        />
 
-        {!!mascot && (
-          <View style={styles.mascotWrap}>
-            <Text style={styles.mascot}>🦊 {mascot}</Text>
-          </View>
-        )}
+        <View style={styles.body}>
+          {screen === "menu" && (
+            <View style={styles.menu}>
+              <Pressable style={styles.modeCard} onPress={() => openMode("sequential")}>
+                <Text style={styles.modeEmoji}>📚</Text>
+                <Text style={styles.modeTitle}>לפי סדר</Text>
+                <Text style={styles.modeDesc}>טבלאות 2–10, שלב אחר שלב</Text>
+              </Pressable>
+              <Pressable style={styles.modeCard} onPress={() => openMode("mixed")}>
+                <Text style={styles.modeEmoji}>🎲</Text>
+                <Text style={styles.modeTitle}>אקראי</Text>
+                <Text style={styles.modeDesc}>שאלות מעורבבות, 3 רמות</Text>
+              </Pressable>
+              <Pressable style={styles.modeCard} onPress={() => openMode("memory")}>
+                <Text style={styles.modeEmoji}>🧠</Text>
+                <Text style={styles.modeTitle}>זיכרון</Text>
+                <Text style={styles.modeDesc}>התאמת תרגילים עם אותה תוצאה</Text>
+              </Pressable>
+            </View>
+          )}
 
-        {mode === "menu" && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>בחרו מצב משחק</Text>
-            <Pressable style={styles.primaryBtn} onPress={() => setMode("sequential")}>
-              <Text style={styles.primaryBtnText}>Sequential - לפי סדר</Text>
-            </Pressable>
-            <Pressable style={styles.primaryBtn} onPress={() => setMode("mixed")}>
-              <Text style={styles.primaryBtnText}>Mixed - אקראי</Text>
-            </Pressable>
-            <Pressable style={styles.primaryBtn} onPress={() => setMode("memory")}>
-              <Text style={styles.primaryBtnText}>Memory - זיכרון</Text>
-            </Pressable>
-          </View>
-        )}
+          {screen === "level-select" && gameMode === "sequential" && (
+            <View style={styles.levelSelect}>
+              <Text style={styles.levelSelectHint}>בחרו לוח כפל (שלב)</Text>
+              <View style={styles.levelGrid}>
+                {Array.from({ length: 9 }, (_, i) => i + 1).map((lvl) => (
+                  <Pressable key={lvl} style={styles.levelTile} onPress={() => startSequential(lvl)}>
+                    <Text style={styles.levelTileNum}>{lvl + 1}</Text>
+                    <Text style={styles.levelTileLabel}>לוח</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
 
-        {mode === "sequential" && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Sequential - שלב {seqLevel} (לוח {seqLevel + 1})</Text>
-            <View style={styles.levelRow}>
-              {Array.from({ length: 9 }, (_, i) => i + 1).map((lvl) => (
-                <Pressable
-                  key={lvl}
-                  style={[styles.levelChip, seqLevel === lvl && styles.levelChipActive]}
-                  onPress={() => setSeqLevel(lvl)}
-                >
-                  <Text style={styles.levelChipText}>{lvl}</Text>
+          {screen === "level-select" && gameMode === "mixed" && (
+            <View style={styles.levelSelect}>
+              <Text style={styles.levelSelectHint}>בחרו רמת קושי</Text>
+              {(
+                [
+                  { lvl: 1 as MixedLevel, title: "קל", desc: "טבלאות 2–5" },
+                  { lvl: 2 as MixedLevel, title: "קשה", desc: "טבלאות 6–9" },
+                  { lvl: 3 as MixedLevel, title: "מאתגר", desc: "טבלאות 2–10" }
+                ] as const
+              ).map((item) => (
+                <Pressable key={item.lvl} style={styles.levelCard} onPress={() => startMixed(item.lvl)}>
+                  <Text style={styles.levelCardTitle}>{item.title}</Text>
+                  <Text style={styles.levelCardDesc}>{item.desc}</Text>
                 </Pressable>
               ))}
             </View>
+          )}
 
-            {!seqDone ? (
-              <>
-                <Text style={styles.question}>{seqQ[seqIndex].left} × {seqQ[seqIndex].right} = ?</Text>
-                <Keypad
-                  value={seqInput}
-                  onChange={setSeqInput}
-                  onSubmit={() => {
-                    if (!seqInput.trim()) return;
-                    const current = seqQ[seqIndex];
-                    if (Number(seqInput) === current.answer) {
-                      setSeqCorrect((v) => v + 1);
-                      setSeqIndex((v) => v + 1);
+          {screen === "level-select" && gameMode === "memory" && (
+            <View style={styles.levelSelect}>
+              <Text style={styles.levelSelectHint}>בחרו רמה</Text>
+              {(
+                [
+                  { lvl: 1 as MemoryLevel, title: "Type B", desc: "טבלאות 6–10" },
+                  { lvl: 2 as MemoryLevel, title: "Type A", desc: "טבלאות 2–5" },
+                  { lvl: 3 as MemoryLevel, title: "Mixed", desc: "כל הטבלאות" }
+                ] as const
+              ).map((item) => (
+                <Pressable key={item.lvl} style={styles.levelCard} onPress={() => startMemory(item.lvl)}>
+                  <Text style={styles.levelCardTitle}>{item.title}</Text>
+                  <Text style={styles.levelCardDesc}>{item.desc}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {screen === "game" && gameMode === "sequential" && (
+            <View style={styles.gameArea}>
+              <QuestionProgress statuses={seqStatuses} currentIndex={seqIndex} />
+              {!seqDone ? (
+                <>
+                  <Text style={styles.question}>
+                    {seqQ[seqIndex].left} × {seqQ[seqIndex].right} = ?
+                  </Text>
+                  <Keypad
+                    value={seqInput}
+                    feedback={feedback}
+                    onChange={setSeqInput}
+                    onSubmit={() => {
+                      if (seqLocked || !seqInput.trim()) return;
+                      const current = seqQ[seqIndex];
+                      const idx = seqIndex;
+                      if (Number(seqInput) === current.answer) {
+                        setSeqLocked(true);
+                        setSeqStatuses((prev) => {
+                          const next = [...prev];
+                          next[idx] = "correct";
+                          return next;
+                        });
+                        setSeqInput("");
+                        showFeedback("נכון מאוד! ⭐", "success");
+                        setTimeout(() => {
+                          setSeqIndex((v) => v + 1);
+                          clearFeedback();
+                          setSeqLocked(false);
+                        }, 1000);
+                      } else {
+                        setSeqInput("");
+                        showFeedback("לא נכון, נסו שוב", "error");
+                      }
+                    }}
+                  />
+                  <Pressable
+                    style={styles.skipBtn}
+                    onPress={() => {
+                      if (seqLocked) return;
+                      setSeqLocked(true);
+                      const idx = seqIndex;
+                      setSeqStatuses((prev) => {
+                        const next = [...prev];
+                        next[idx] = "skipped";
+                        return next;
+                      });
                       setSeqInput("");
-                      showMascot("נכון מאוד! ⭐");
-                    } else {
-                      showMascot("לא נורא, נסו שוב 😊");
-                    }
-                  }}
-                />
-                <Pressable
-                  style={styles.secondaryBtn}
-                  onPress={() => {
-                    setSeqSkips((v) => v + 1);
-                    setSeqIndex((v) => v + 1);
-                    setSeqInput("");
-                    showMascot("דילגנו לשאלה הבאה");
-                  }}
-                >
-                  <Text style={styles.secondaryBtnText}>דילוג (-1)</Text>
-                </Pressable>
-              </>
-            ) : (
-              <Text style={styles.result}>ציון סופי: {seqScore}/10</Text>
-            )}
-          </View>
-        )}
-
-        {mode === "mixed" && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Mixed - רמה {mixedLevel}</Text>
-            <View style={styles.levelRow}>
-              {[1, 2, 3].map((lvl) => (
-                <Pressable
-                  key={lvl}
-                  style={[styles.levelChip, mixedLevel === lvl && styles.levelChipActive]}
-                  onPress={() => setMixedLevel(lvl as MixedLevel)}
-                >
-                  <Text style={styles.levelChipText}>{lvl}</Text>
-                </Pressable>
-              ))}
+                      showFeedback("דילגתם לשאלה הבאה", "info");
+                      setTimeout(() => {
+                        setSeqIndex((v) => v + 1);
+                        clearFeedback();
+                        setSeqLocked(false);
+                      }, 1000);
+                    }}
+                  >
+                    <Text style={styles.skipBtnText}>דילוג (−1 נקודה)</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <View style={styles.resultCard}>
+                  <Text style={styles.resultTitle}>סיימתם!</Text>
+                  <StarRating correctCount={seqStatuses.filter((s) => s === "correct").length} />
+                  <Text style={styles.resultScore}>ציון: {seqScore}/10</Text>
+                  {seqLevel < 9 && (
+                    <Pressable style={styles.primaryBtn} onPress={goNextSequentialLevel}>
+                      <Text style={styles.primaryBtnText}>לשלב הבא</Text>
+                    </Pressable>
+                  )}
+                  <Pressable style={styles.primaryBtn} onPress={goLevelSelect}>
+                    <Text style={styles.primaryBtnText}>בחירת שלב אחר</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
-            <Text style={styles.caption}>
-              {mixedLevel === 1 ? "טבלאות 2-5" : mixedLevel === 2 ? "טבלאות 6-9" : "טבלאות 2-10"}
-            </Text>
+          )}
 
-            {!mixedDone ? (
-              <>
-                <Text style={styles.question}>{mixedQ[mixedIndex].left} × {mixedQ[mixedIndex].right} = ?</Text>
-                <Keypad
-                  value={mixedInput}
-                  onChange={setMixedInput}
-                  onSubmit={() => {
-                    if (!mixedInput.trim()) return;
-                    const current = mixedQ[mixedIndex];
-                    if (Number(mixedInput) === current.answer) {
-                      setMixedScore((v) => v + 1);
-                      showMascot("מצוין! 🌟");
-                    } else {
-                      showMascot("נמשיך לשאלה הבאה");
-                    }
-                    setMixedIndex((v) => v + 1);
-                    setMixedInput("");
-                  }}
-                />
-              </>
-            ) : (
-              <Text style={styles.result}>ציון סופי: {mixedScore}/10</Text>
-            )}
-          </View>
-        )}
-
-        {mode === "memory" && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Memory - רמה {memoryLevel}</Text>
-            <View style={styles.levelRow}>
-              {[1, 2, 3].map((lvl) => (
-                <Pressable
-                  key={lvl}
-                  style={[styles.levelChip, memoryLevel === lvl && styles.levelChipActive]}
-                  onPress={() => setMemoryLevel(lvl as MemoryLevel)}
-                >
-                  <Text style={styles.levelChipText}>{lvl === 1 ? "Type B" : lvl === 2 ? "Type A" : "Mixed"}</Text>
-                </Pressable>
-              ))}
+          {screen === "game" && gameMode === "mixed" && (
+            <View style={styles.gameArea}>
+              <QuestionProgress statuses={mixedStatuses} currentIndex={mixedIndex} />
+              {!mixedDone ? (
+                <>
+                  <Text style={styles.question}>
+                    {mixedQ[mixedIndex].left} × {mixedQ[mixedIndex].right} = ?
+                  </Text>
+                  <Keypad
+                    value={mixedInput}
+                    feedback={feedback}
+                    onChange={setMixedInput}
+                    onSubmit={() => {
+                      if (mixedLocked || !mixedInput.trim()) return;
+                      setMixedLocked(true);
+                      const idx = mixedIndex;
+                      const current = mixedQ[mixedIndex];
+                      const correct = Number(mixedInput) === current.answer;
+                      setMixedStatuses((prev) => {
+                        const next = [...prev];
+                        next[idx] = correct ? "correct" : "skipped";
+                        return next;
+                      });
+                      if (correct) setMixedScore((v) => v + 1);
+                      setMixedInput("");
+                      showFeedback(correct ? "מצוין! 🌟" : "לא נכון", correct ? "success" : "error");
+                      setTimeout(() => {
+                        setMixedIndex((v) => v + 1);
+                        clearFeedback();
+                        setMixedLocked(false);
+                      }, 1000);
+                    }}
+                  />
+                </>
+              ) : (
+                <View style={styles.resultCard}>
+                  <Text style={styles.resultTitle}>סיימתם!</Text>
+                  <StarRating correctCount={mixedScore} />
+                  <Text style={styles.resultScore}>ציון: {mixedScore}/10</Text>
+                  <Pressable style={styles.primaryBtn} onPress={goLevelSelect}>
+                    <Text style={styles.primaryBtnText}>רמה אחרת</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
-            <Text style={styles.result}>ניקוד: {matchedPairs}</Text>
-            <View style={styles.memoryGrid}>
-              {visibleMemoryCards.map((card) => (
-                <Pressable
-                  key={card.id}
-                  style={[styles.memoryCard, card.isOpen && styles.memoryCardOpen]}
-                  onPress={() => {
-                    if (opened.length === 2 || card.matched || opened.includes(card.id)) return;
-                    setOpened((prev) => [...prev, card.id]);
-                  }}
-                >
-                  <Text style={styles.memoryText}>{card.isOpen ? card.text : "?"}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        )}
+          )}
 
-        <View style={styles.footerActions}>
-          <Pressable style={styles.secondaryBtn} onPress={resetAll}>
-            <Text style={styles.secondaryBtnText}>חזרה לתפריט</Text>
-          </Pressable>
+          {screen === "game" && gameMode === "memory" && (
+            <View style={styles.gameArea}>
+              <Text style={styles.questionCounter}>ניקוד: {matchedPairs} זוגות</Text>
+              <View style={styles.memoryGrid}>
+                {visibleMemoryCards.map((card) => (
+                  <Pressable
+                    key={card.id}
+                    style={[styles.memoryCard, card.isOpen && styles.memoryCardOpen]}
+                    onPress={() => {
+                      if (opened.length === 2 || card.matched || opened.includes(card.id)) return;
+                      setOpened((prev) => [...prev, card.id]);
+                    }}
+                  >
+                    <Text style={styles.memoryText}>{card.isOpen ? card.text : "?"}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {matchedPairs >= 6 && (
+                <View style={styles.resultCard}>
+                  <Text style={styles.resultTitle}>כל הכבוד!</Text>
+                  <Pressable style={styles.primaryBtn} onPress={goLevelSelect}>
+                    <Text style={styles.primaryBtnText}>רמה אחרת</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          )}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        {overlayFeedback && <ToastOverlay text={overlayFeedback.text} tone={overlayFeedback.tone} />}
+      </SafeAreaView>
+    </PhoneShell>
   );
 }
 
 const styles = StyleSheet.create({
+  shellNative: { flex: 1 },
+  shellWebOuter: {
+    flex: 1,
+    backgroundColor: "#D8D4E8",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  shellWebInner: {
+    width: PHONE_WIDTH,
+    maxWidth: "100%",
+    flex: 1,
+    maxHeight: 844,
+    backgroundColor: palette.cream,
+    overflow: "hidden",
+    ...(Platform.OS === "web"
+      ? ({
+          boxShadow: "0 8px 32px rgba(59, 53, 82, 0.2)",
+          borderRadius: 24
+        } as object)
+      : {})
+  },
   safe: { flex: 1, backgroundColor: palette.cream },
-  container: { padding: 16, gap: 12 },
-  title: { fontSize: 32, fontWeight: "800", color: palette.text, textAlign: "center" },
-  subtitle: { fontSize: 18, color: palette.text, textAlign: "center" },
-  card: {
+  headerBase: { backgroundColor: palette.cream },
+  headerHome: {
+    alignItems: "center",
+    paddingTop: 4,
+    paddingBottom: 4
+  },
+  headerLogoLarge: { width: 100, height: 100 },
+  headerTagline: {
+    marginTop: 8,
+    fontSize: 17,
+    fontWeight: "600",
+    color: palette.text,
+    textAlign: "center"
+  },
+  headerCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
+  headerSide: { width: 44 },
+  headerBack: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: palette.paleBlue,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  headerBackText: { fontSize: 22, color: palette.accent, fontWeight: "700" },
+  headerLogoSmall: { width: 100, height: 100 },
+  body: { flex: 1, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  menu: { flex: 1, gap: 12 },
+  modeCard: {
     backgroundColor: palette.paleBlue,
     borderRadius: 16,
-    padding: 14,
-    gap: 10
+    padding: 18,
+    gap: 4
   },
-  cardTitle: { fontSize: 20, fontWeight: "700", color: palette.text, textAlign: "center" },
+  modeEmoji: { fontSize: 28 },
+  modeTitle: { fontSize: 20, fontWeight: "800", color: palette.text },
+  modeDesc: { fontSize: 14, color: palette.text, opacity: 0.85 },
+  levelSelect: { flex: 1, gap: 12 },
+  levelSelectHint: { fontSize: 16, fontWeight: "600", color: palette.text, textAlign: "center" },
+  levelGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10 },
+  levelTile: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+    backgroundColor: palette.lavender,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  levelTileNum: { fontSize: 32, fontWeight: "800", color: palette.text },
+  levelTileLabel: { fontSize: 14, color: palette.text },
+  levelCard: {
+    backgroundColor: palette.paleBlue,
+    borderRadius: 14,
+    padding: 16,
+    gap: 4
+  },
+  levelCardTitle: { fontSize: 18, fontWeight: "800", color: palette.text },
+  levelCardDesc: { fontSize: 14, color: palette.text, opacity: 0.85 },
+  gameArea: { flex: 1, gap: 14 },
+  progressRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 4
+  },
+  progressDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  progressPending: { backgroundColor: palette.pending },
+  progressCorrect: { backgroundColor: palette.success },
+  progressSkipped: { backgroundColor: palette.error },
+  progressCurrent: {
+    borderWidth: 2,
+    borderColor: palette.accent
+  },
+  progressDotText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  question: { fontSize: 36, fontWeight: "800", color: palette.text, textAlign: "center" },
+  questionCounter: { fontSize: 15, fontWeight: "600", color: palette.text, textAlign: "center" },
+  keypadWrap: { gap: 10 },
+  inputValue: {
+    textAlign: "center",
+    fontSize: 22,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    color: palette.text,
+    minHeight: 52
+  },
+  inputSuccess: { backgroundColor: "#E8F5E9", color: "#2E7D32" },
+  inputError: { backgroundColor: "#FFEBEE", color: "#C62828" },
+  keypadLtr: { direction: "ltr" },
+  keypadRows: { gap: 8 },
+  keypadRow: { flexDirection: "row", justifyContent: "center", gap: 8, width: 292, alignSelf: "center" },
+  key: {
+    width: 92,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  keyText: { fontSize: 24, fontWeight: "700", color: palette.text },
+  keyActionBtn: {
+    width: 92,
+    height: 52,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  keyConfirmBtn: { backgroundColor: palette.success },
+  keyDeleteBtn: { backgroundColor: palette.warning },
+  keyActionText: { fontSize: 14, fontWeight: "700", color: palette.text },
+  skipBtn: {
+    alignSelf: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: palette.error
+  },
+  skipBtnText: { fontSize: 15, color: "#fff", fontWeight: "700" },
+  resultCard: {
+    backgroundColor: palette.paleBlue,
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+    alignItems: "center",
+    marginTop: 8
+  },
+  resultTitle: { fontSize: 24, fontWeight: "800", color: palette.text },
+  resultScore: { fontSize: 20, fontWeight: "700", color: palette.success },
+  starRow: { flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
+  starIcon: { fontSize: 32, fontWeight: "700" },
+  starGold: { color: "#F7C948" },
+  starGray: { color: palette.pending },
   primaryBtn: {
     backgroundColor: palette.lavender,
     borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
     alignItems: "center"
   },
-  primaryBtnText: { color: palette.text, fontWeight: "700" },
-  secondaryBtn: {
-    backgroundColor: palette.mint,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    alignItems: "center"
-  },
-  secondaryBtnText: { color: palette.text, fontWeight: "700" },
-  mascotWrap: {
-    backgroundColor: "#FFFFFFB0",
-    borderRadius: 12,
-    padding: 10,
-    alignItems: "center"
-  },
-  mascot: { fontSize: 20, color: palette.accent, fontWeight: "700" },
-  levelRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8 },
-  levelChip: {
-    backgroundColor: "#ffffffaa",
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 12
-  },
-  levelChipActive: { backgroundColor: palette.accent },
-  levelChipText: { color: palette.text, fontWeight: "700" },
-  question: { fontSize: 28, fontWeight: "800", color: palette.text, textAlign: "center" },
-  keypadWrap: { gap: 10 },
-  inputValue: {
-    textAlign: "center",
-    fontSize: 24,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 10,
-    color: palette.text
-  },
-  keypadRows: { gap: 8 },
-  keypadRow: { flexDirection: "row", justifyContent: "center", gap: 8 },
-  key: {
-    width: 92,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  keyText: { fontSize: 22, fontWeight: "700", color: palette.text },
-  keyActionBtn: {
-    width: 92,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: palette.mint,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  result: { fontSize: 22, fontWeight: "800", color: palette.success, textAlign: "center" },
-  caption: { textAlign: "center", color: palette.text },
+  primaryBtnText: { color: palette.text, fontWeight: "700", fontSize: 16 },
   memoryGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8 },
   memoryCard: {
     width: "30%",
-    minWidth: 92,
+    minWidth: 88,
     aspectRatio: 1,
     borderRadius: 12,
     backgroundColor: "#ffffffcc",
     alignItems: "center",
     justifyContent: "center",
-    padding: 8
+    padding: 6
   },
   memoryCardOpen: { backgroundColor: palette.lavender },
-  memoryText: { color: palette.text, fontWeight: "700", textAlign: "center" },
-  footerActions: { marginTop: 8, marginBottom: 24 }
+  memoryText: { color: palette.text, fontWeight: "700", textAlign: "center", fontSize: 13 },
+  toastOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingTop: 72,
+    zIndex: 100
+  },
+  toastBox: {
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    maxWidth: "85%"
+  },
+  toastSuccess: { backgroundColor: "#E8F5E9" },
+  toastError: { backgroundColor: "#FFEBEE" },
+  toastInfo: { backgroundColor: "#FFFFFFEE" },
+  toastText: { fontSize: 17, fontWeight: "700", color: palette.text, textAlign: "center" }
 });
