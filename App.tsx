@@ -182,13 +182,16 @@ function AppHeader({ onBack, showTagline }: { onBack?: () => void; showTagline?:
       {!showTagline &&
         (onBack ? (
           <Pressable onPress={onBack} style={styles.headerBack} hitSlop={12}>
-            <Text style={styles.headerBackText}>→</Text>
+            {/* ב-Web נהפוך את כיוון החץ הויזואלי שיתאים למבנה ה-RTL של האייפון */}
+            <Text style={styles.headerBackText}>
+              {Platform.OS === "web" ? "←" : "→"}
+            </Text>
           </Pressable>
         ) : (
           <View style={styles.headerSide} />
         ))}
       <Image
-        key="kefli-logo"
+        key="kefeli-logo"
         source={APP_LOGO}
         style={showTagline ? styles.headerLogoLarge : styles.headerLogoSmall}
         resizeMode="contain"
@@ -771,7 +774,8 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   headerCompact: {
-    flexDirection: "row",
+    // ב-Web נאלץ כיוון שורות הפוך מימין לשמאל כדי לדמות את ה-RTL של האייפון
+    flexDirection: Platform.OS === "web" ? "row-reverse" : "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
@@ -859,6 +863,18 @@ const styles = StyleSheet.create({
   },
   inputSuccess: { backgroundColor: "#E8F5E9", color: "#2E7D32" },
   inputError: { backgroundColor: "#FFEBEE", color: "#C62828" },
+  keypadLtr: { direction: "ltr", gap: 8 },
+  keypadRows: { gap: 8 },
+  keypadRow: { flexDirection: "row", justifyContent: "center", gap: 8, width: 292, alignSelf: "center" },
+  key: {
+    width: 92,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  keyText: { fontSize: 24, fontWeight: "700", color: palette.text },
   keypadLtr: { direction: "ltr", gap: 8 },
   keypadRows: { gap: 8 },
   keypadRow: { flexDirection: "row", justifyContent: "center", gap: 8, width: 292, alignSelf: "center" },

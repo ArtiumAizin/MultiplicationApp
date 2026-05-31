@@ -187,7 +187,7 @@ function AppHeader({ onBack, showTagline }: { onBack?: () => void; showTagline?:
           <View style={styles.headerSide} />
         ))}
       <Image
-        key="kefli-logo"
+        key="KEFELI-logo"
         source={APP_LOGO}
         style={showTagline ? styles.headerLogoLarge : styles.headerLogoSmall}
         resizeMode="contain"

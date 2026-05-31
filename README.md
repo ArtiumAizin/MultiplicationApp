@@ -1,4 +1,4 @@
-## כפלי - KEFLI
+## כפלי - KEFELI
 
 אפליקציית לימוד כפל ב-React Native עם Expo, בעברית (RTL), הכוללת שלושה מצבי משחק:
 
@@ -11,6 +11,11 @@
 ```bash
 npm install
 npm run start
+```
+
+```bash
+npm install
+npx expo start -c --tunnel
 ```
 
 ### פלטפורמות
