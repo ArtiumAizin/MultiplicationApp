@@ -105,7 +105,6 @@ function buildMemory(level: MemoryLevel): MemoryCard[] {
   const cards: MemoryCard[] = [];
   const usedResults = new Set<number>();
 
-  // בנה מראש מילון של כל הכפולות האפשריות לפי תוצאה
   const resultMap = new Map<number, Array<[number, number]>>();
   for (const a of tables) {
     for (let b = 1; b <= 10; b++) {
@@ -115,30 +114,40 @@ function buildMemory(level: MemoryLevel): MemoryCard[] {
     }
   }
 
-  // סנן רק תוצאות שיש להן לפחות 2 תרגילים שונים
   const validResults = [...resultMap.entries()]
     .filter(([, exprs]) => exprs.length >= 2)
     .map(([result]) => result);
 
-  // ערבב ובחר
   const shuffledResults = shuffle(validResults);
 
   for (const result of shuffledResults) {
     if (cards.length / 2 >= pairsCount) break;
     if (usedResults.has(result)) continue;
 
-    const exprs = shuffle(resultMap.get(result)!);
-    const [a1, b1] = exprs[0];
-    const [a2, b2] = exprs[1];
+    const exprs = resultMap.get(result)!;
 
-    // ודא שהתרגילים שונים (לא רק סדר הפוך)
-    if (a1 === b2 && b1 === a2) continue; // אופציונלי: לדלג על 2×3 ו-3×2
+    // Try to find a valid pair (not reverse order)
+    let foundPair: [number, number] | null = null;
+    for (let i = 0; i < exprs.length; i++) {
+      for (let j = i + 1; j < exprs.length; j++) {
+        const [a1, b1] = exprs[i];
+        const [a2, b2] = exprs[j];
+        // Check they're not reverse of each other
+        if (!(a1 === b2 && b1 === a2)) {
+          foundPair = [[a1, b1], [a2, b2]];
+          break;
+        }
+      }
+      if (foundPair) break;
+    }
+
+    if (!foundPair) continue;
 
     usedResults.add(result);
     const key = `${result}`;
     cards.push(
-      { id: `expr1-${key}`, text: `${a1} × ${b1}`, result, matched: false },
-      { id: `expr2-${key}`, text: `${a2} × ${b2}`, result, matched: false }
+      { id: `expr1-${key}`, text: `${foundPair[0][0]} × ${foundPair[0][1]}`, result, matched: false },
+      { id: `expr2-${key}`, text: `${foundPair[1][0]} × ${foundPair[1][1]}`, result, matched: false }
     );
   }
 
@@ -182,7 +191,7 @@ function AppHeader({ onBack, showTagline }: { onBack?: () => void; showTagline?:
       {!showTagline &&
         (onBack ? (
           <Pressable onPress={onBack} style={styles.headerBack} hitSlop={12}>
-            {/* ב-Web נהפוך את כיוון החץ הויזואלי שיתאים למבנה ה-RTL של האייפון */}
+            {/* On web, reverse arrow direction to match phone's RTL structure */}
             <Text style={styles.headerBackText}>
               {Platform.OS === "web" ? "←" : "→"}
             </Text>
@@ -338,7 +347,7 @@ function MemoryBoard({
   const availableHeight = screenHeight - RESERVED_HEIGHT - GAP * (ROWS - 1);
   const cardByWidth = Math.floor(availableWidth / cols);
   const cardByHeight = Math.floor(availableHeight / ROWS);
-  // הוסף הגבלה מקסימלית כדי שקלפים ברמה קל לא יהיו ענקיים
+  // Add max size limit so easy level cards don't become huge
   const cardSize = Math.min(cardByWidth, cardByHeight, 160);
   const totalPairs = level === 1 ? 4 : level === 2 ? 6 : 8;
   const done = matchedPairs >= totalPairs;
@@ -434,7 +443,7 @@ export default function App() {
       );
       setMatchedPairs((p) => p + 1);
     }
-    // הצג overlay ישירות בלי לקרוא לפונקציה שמחוץ ל-effect
+    // Show overlay directly without calling external function from effect
     if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
     setOverlayFeedback({ text: matched ? "כל הכבוד! 🎉" : "נסו שוב", tone: matched ? "success" : "error" });
     overlayTimerRef.current = setTimeout(() => {
@@ -774,7 +783,7 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   headerCompact: {
-    // ב-Web נאלץ כיוון שורות הפוך מימין לשמאל כדי לדמות את ה-RTL של האייפון
+    // On web, force reverse row direction to simulate phone's RTL
     flexDirection: Platform.OS === "web" ? "row-reverse" : "row",
     alignItems: "center",
     justifyContent: "space-between",
